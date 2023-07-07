@@ -1,0 +1,3 @@
+{
+  "Lua.diagnostics.globals": ["min", "print_context", "sum_prop"]
+}
