@@ -1,0 +1,28 @@
+- Prima di tutto dobbiamo far sì che le funzioni siano più pure possibili.
+- Niente variabili globali, solo local.
+- Quando lavoriamo su una tabella, prima ne creiamo una nuova, poi ci lavoriamo creandola man mano.
+- Per cancella o inserire un elemento le funzioni della libreria 'table' non sono valide in quanto lavorano sulla stessa istanza.
+- Alla fine implementa il tutto con le courutine.
+
+PROCEDIMENTO:
+1. Prima di tutto l'azione principale che deve fare il programma è la 'move'.
+2. Per quanto riguarda la funzione 'move', dobbiamo pensare di distinguerla in due casi:
+    - Applicata alla tabella corrisponde al gong e fa fare uno spostamento a tutti i sempai (uno alla volta).
+    - Applicata ad un sempai, permette di controllare la configurazione iniziale e a partire da questa, far muovere di conseguenza il sempai.
+    La prima invoca la seconda ovviamente.
+    Contestualmente, la prima non esiste, in quanto non si muovono tutti insieme, ma solo uno alla volta, fino a quando non raggiungiamo una configurazione in cui #D.S == 1
+3. Capire quindi come effettuare l'operazione 'move'.
+4. TODO
+
+'move':
+    - Prima di tutto serve procedere con un certo criterio. Infatti ho deciso che prima di tutto (fino a quando la somma delle proprietà del sempai è == 0) il sempai punterà a catturare gli oggetti più vicini.
+    - Una volta che ne ha catturato uno, considera gli oggetti al pari degli altri sempai, perciò si avvicina a quello più vicino tra i due (a patto che però riesca a battere quel sempai).
+    Una volta stabilito questo non serve altro, in quanto ciascuno procede con queste due politiche.
+    - Per quanto riguarda lo spostamento, preferibilmente viene fatto in diagonale, anche se il numero di passi necessari è equivalente a se ci si sarebbe mossi ortogonalmente (provato).
+
+
+TODO:
+-- Implementa la funzione moveGeneral().
+- Fai ciclare il tutto.
+- Una volta fatto quello sopra, vai ad aggiustare le parti sbagliate, sopratutto quelle relative alla occupazione delle caselle ed il fatto che quando si spostano possono sovrapporsi ad altri (anche se in quel caso in realtà
+dovrebbero combattere, quindi non è un vero e proprio conflitto di posizione perché non si dovrebbe arrivare da prima a questa situazione).
