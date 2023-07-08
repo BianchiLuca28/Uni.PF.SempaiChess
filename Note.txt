@@ -22,7 +22,11 @@ PROCEDIMENTO:
 
 
 TODO:
--- Implementa la funzione moveGeneral().
+- Il sempai in 2;4 qualche volta va a destra e qualche volta va a sinistra. Perché?
+- A volte vanno a finire fuori dalla tabella in indici come 0. Perché?
+- Verso la fine cerca di capire meglio come viene fatto il movimento dei sempai in diagonale.
+- Rendi le funzioni totali.
+- Rendi le funzioni più pure possibili (senza stato).
 - Fai ciclare il tutto.
 - Una volta fatto quello sopra, vai ad aggiustare le parti sbagliate, sopratutto quelle relative alla occupazione delle caselle ed il fatto che quando si spostano possono sovrapporsi ad altri (anche se in quel caso in realtà
 dovrebbero combattere, quindi non è un vero e proprio conflitto di posizione perché non si dovrebbe arrivare da prima a questa situazione).

@@ -38,8 +38,8 @@ local function printTable(tabella)
             local_table[i][j] = 0
         end
     end
-    for _, value in ipairs(tabella.S) do
-        local_table[value[1]][value[2]] = "S"
+    for index, value in ipairs(tabella.S) do
+        local_table[value[1]][value[2]] = index
     end
     for _, value in ipairs(tabella.U) do
         local_table[value[1]][value[2]] = "U"
@@ -227,6 +227,7 @@ local function move(tabella_D, num_sempai)
             local function diff_dist(sempai_x, sempai_y, item_x, item_y)
                 return math.abs(sempai_x - item_x) + math.abs(sempai_y - item_y)
             end
+
             -- CHECK if Copilot got it right and if to do it with coordinates of indexes
             -- auxiliar function to check if the sempai can win against the other sempai
             -- @param: tabella (the whole table D)
@@ -252,20 +253,80 @@ local function move(tabella_D, num_sempai)
             end
 
             local min_dist = 1000000 -- una tantum
-            local min_x = 0
-            local min_y = 0
-            for key, prop_table in pairs(tabella) do
-                for _, item in ipairs(prop_table) do
+            local min_x = 0 -- x coordinate of the closest item
+            local min_y = 0 -- y coordinate of the closest item
+            for key, sub_table in pairs(tabella) do
+                for _, item in ipairs(sub_table) do
                     local dist_from_current_object = diff_dist(sempai_x, sempai_y, item[1], item[2])
-                    if ((dist_from_current_object > 0) and (dist_from_current_object < min_dist) and ((key == 'S') and check_win(tabella, getSempaiFromCoordinates(sempai_x, sempai_y), getCoordinatesOfClosestItem(item[0], item[1])))) then
-                        min_dist = dist_from_current_object
-                        min_x = item[1]
-                        min_y = item[2]
+                    -- checks (the 'and' has a specific order because it's lazy):
+                    -- 1) if the distance is more than 0 (so it's not the same object/sempai)
+                    -- 2) if the distance is less than the current minimum distance
+                    -- 3) if the current item is a sempai and if the moving sempai can win against the current sempai
+                    if ((dist_from_current_object > 0) and (dist_from_current_object < min_dist)) then
+                        if ((key ~= "S") or (key == 'S' and check_win(tabella, getSempaiFromCoordinates(tabella, sempai_x, sempai_y), getSempaiFromCoordinates(tabella, item[1], item[2])))) then
+                            min_dist = dist_from_current_object
+                            min_x = item[1]
+                            min_y = item[2]
+                        end
                     end
                 end
             end
             return min_x, min_y
         end
+
+        -- auxiliar function to move the sempai to the closest object or the closest sempai, calculated from the getCoordinatesOfClosestItem function
+        -- @param: tabella (the whole table D)
+        -- @param: sempai_x (the x coordinate of the sempai)
+        -- @param: sempai_y (the y coordinate of the sempai)
+        -- @param: item_x (the x coordinate of the object/sempai)
+        -- @param: item_y (the y coordinate of the object/sempai)
+        -- @return: the table with the sempai moved closer to the object/sempai (but with different reference)
+        local function moveSempaiToItem(tabella, sempai_x, sempai_y, item_x, item_y)
+            local temp_table = deepcopy(tabella)
+            local dist_x = item_x - sempai_x
+            local dist_y = item_y - sempai_y
+            -- this sequence of ifs make the sempai move in diagonal
+            if ((dist_x > 0 and dist_x % 2 ~= 0) or (dist_x > 0 and dist_y == 0)) then
+                sempai_x = sempai_x + 1
+            elseif ((dist_x < 0 and dist_x % 2 ~= 0) or (dist_x < 0 and dist_y == 0)) then
+                sempai_x = sempai_x - 1
+            elseif (dist_y > 0) then sempai_y = sempai_y + 1 elseif (dist_y < 0) then sempai_y = sempai_y - 1 end
+            -- changes the coordinates of the sempai in the table
+            temp_table.S[num_sempai][1] = sempai_x
+            temp_table.S[num_sempai][2] = sempai_y
+            return temp_table
+        end
+
+        -- auxiliar function to calculate the rewards of the sempai after the move if it reached an object
+        -- @param: tabella (the whole table D)
+        -- @param: x (the x coordinate of the sempai)
+        -- @param: y (the y coordinate of the sempai)
+        -- @return: the table with the rewards of the sempai updated (but with different reference)
+        local function calculateRewards(tabella, sempai_x, sempai_y)
+            local temp_table = deepcopy(tabella)
+            for key, prop_table in pairs(temp_table) do
+                if (key ~= "S") then
+                    for index, value in ipairs(prop_table) do
+                        -- search the object where the sempai moved to
+                        if (value[1] == sempai_x and value[2] == sempai_y) then
+                            table.remove(prop_table, index)
+                            if(key == 'U') then temp_table.S[num_sempai][3] = temp_table.S[num_sempai][3] + 1 end
+                            if(key == 'C') then temp_table.S[num_sempai][4] = temp_table.S[num_sempai][4] + 1 end
+                            if(key == 'G') then temp_table.S[num_sempai][5] = temp_table.S[num_sempai][5] + 1 end
+                            if(key == 'R') then temp_table.S[num_sempai][6] = temp_table.S[num_sempai][6] + 1 end
+                        end
+                    end
+                end
+            end
+            return temp_table
+        end
+
+        -- firstly it moves the sempai to the closest object, then it calculates the rewards of the sempai
+        temporary_table = moveSempaiToItem(tabella_D, tabella_D.S[num_sempai][1], tabella_D.S[num_sempai][2], getCoordinatesOfClosestItem(tabella_D, tabella_D.S[num_sempai][1], tabella_D.S[num_sempai][2]))
+        -- returns the table in which the sempai moved and the rewards of the same sempai are updated
+        return calculateRewards(temporary_table, temporary_table.S[num_sempai][1], temporary_table.S[num_sempai][2])
+
+        -- TODO: If the sempai moved to near a sempai does it needs to fight?
     end
 
     -- auxiliar function that makes the sempai fight with another sempai and returns the winner
@@ -319,13 +380,17 @@ local function move(tabella_D, num_sempai)
         end)(tabella_D, sempai1_x, sempai1_y, sempai2_x, sempai2_y)
     end
 
+    -- Save the coordinates of the sempai in case it has to fight with another sempai and the index of the sempai changes
+    local sempai_x = tabella_D.S[num_sempai][1]
+    local sempai_y = tabella_D.S[num_sempai][2]
+
     -- TODO: deve farlo prima o dopo? Secondo me prima, perché se partono che sono vicini devono già combattere
     -- checks if the sempai have to fight with another sempai and if it's true, it calls the fight function, otherwise returns the sempai coordinates
     -- @param: sempai_x (the x coordinate of the sempai)
     -- @param: sempai_y (the y coordinate of the sempai)
     -- @return: the table with the sempai moved (but with different reference)
     local temp_table = (function (sempai_x, sempai_y)
-        if (getSempaiFromCoordinates(tabella_D, sempai_x + 1, sempai_y) ~= 0) then return fight(tabella_D, sempai_x, sempai_y, sempai_x + 1, sempai_y) 
+        if (getSempaiFromCoordinates(tabella_D, sempai_x + 1, sempai_y) ~= 0) then return fight(tabella_D, sempai_x, sempai_y, sempai_x + 1, sempai_y)
         elseif (getSempaiFromCoordinates(tabella_D, sempai_x - 1, sempai_y) ~= 0) then return fight(tabella_D, sempai_x, sempai_y, sempai_x - 1, sempai_y)
         elseif (getSempaiFromCoordinates(tabella_D, sempai_x, sempai_y + 1) ~= 0) then return fight(tabella_D, sempai_x, sempai_y, sempai_x, sempai_y + 1)
         elseif (getSempaiFromCoordinates(tabella_D, sempai_x, sempai_y - 1) ~= 0) then return fight(tabella_D, sempai_x, sempai_y, sempai_x, sempai_y - 1)
@@ -333,8 +398,15 @@ local function move(tabella_D, num_sempai)
         end
     end)(tabella_D.S[num_sempai][1], tabella_D.S[num_sempai][2])
 
+    -- correct the index of the sempai if it changed after a fight
+    local new_num_sempai = getSempaiFromCoordinates(temp_table, sempai_x, sempai_y)
+
+    if (new_num_sempai == 0) then
+        return temp_table
+    end
+
     -- check if the sempai has to move to the closest object or not (so if the sum of the properties is 0 or not)
-    if(sum_prop(temp_table.S, num_sempai) == 0) then return moveToClosestObject(temp_table, num_sempai) else return moveGeneral(temp_table, num_sempai) end
+    if(sum_prop(temp_table.S, new_num_sempai) == 0) then return moveToClosestObject(temp_table, new_num_sempai) else return moveGeneral(temp_table, new_num_sempai) end
 end
 
 
@@ -350,34 +422,50 @@ print("\n")
 -- print("\n")
 -- print(table.unpack(temp_table.S[4]))
 
-local temp_table = deepcopy(D)
-for i = 1, 9, 1 do
-    for index, value in pairs(temp_table.S) do
-        if (index <= #temp_table.S) then
-            temp_table = move(temp_table, index)
+local function output (temp_table)
+    
+    for i = 1, 6, 1 do
+        for index, value in pairs(temp_table.S) do
+            if (index <= #temp_table.S) then
+                temp_table = move(temp_table, index)
+            end
         end
+        print("\n")
+        printTable(temp_table)
     end
+
     print("\n")
-    printTable(temp_table)
+
+    local table_names = {'X', 'Y', 'U', 'C', 'G', 'R'}
+    print(table.unpack(table_names))
+    for _, sempai in ipairs(temp_table.S) do
+        print(table.unpack(sempai))
+    end
 end
 
-print("\n")
-
-local table_names = {'X', 'Y', 'U', 'C', 'G', 'R'}
-print(table.unpack(table_names))
-for _, sempai in ipairs(temp_table.S) do
-    print(table.unpack(sempai))
-end
+output(deepcopy(D))
 
 local function start(tabella_D)
-    if #tabella_D.S == 1 then return tabella_D
-    else 
+    if #tabella_D.S == 1 and #tabella_D.U == 0 and #tabella_D.C == 0 and #tabella_D.G == 0 and #tabella_D.R == 0 then
+        print("\n")
+
+        local table_names = {'X', 'Y', 'U', 'C', 'G', 'R'}
+        print(table.unpack(table_names))
+        for _, sempai in ipairs(tabella_D.S) do
+            print(table.unpack(sempai))
+        end
+        return tabella_D
+    else
         local temporary_table = deepcopy(tabella_D)
         for index, value in pairs(temporary_table.S) do
             if (index <= #temporary_table.S) then
                 temporary_table = move(temporary_table, index)
             end
         end
+        print("\n")
+        printTable(temporary_table)
         return start(temporary_table)
     end
 end
+
+-- start(deepcopy(D))
