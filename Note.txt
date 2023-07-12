@@ -22,9 +22,12 @@ PROCEDIMENTO:
 
 
 TODO:
-- Il sempai in 2;4 qualche volta va a destra e qualche volta va a sinistra. Perché?
-- A volte vanno a finire fuori dalla tabella in indici come 0. Perché?
-- Verso la fine cerca di capire meglio come viene fatto il movimento dei sempai in diagonale.
+-- Controlla che la dimensione della tabella negli spostamenti sia rispettata.
+- Fai prove con altre tabelle.
+    -- 
+- Controlla il codice di Enrico.
+- Leggi dall'input la tabella.
+-- Verso la fine cerca di capire meglio come viene fatto il movimento dei sempai in diagonale.
 - Rendi le funzioni totali.
 - Rendi le funzioni più pure possibili (senza stato).
 - Fai ciclare il tutto.

@@ -1,33 +1,107 @@
 -- Utilizza le courutine per far muovere i sempai nella tabella
 -- Come passiamo una tabella? Utilizziamo le copy con table.pack e table.unpack, e le deep-copy?
--- Dobbiamo utilizzare le metatable? Programmazione ad oggetti?
--- Utilizziamo solo Local nelle funzioni? Mai assegnamenti globali?
 
-local N = 10
-local D = {
-    S = {
-        {2,4,0,0,0,0},
-        {3,8,0,0,0,0},
-        {4,1,0,0,0,0},
-        {9,6,0,0,0,0}
-    },
-    U = {
-        {7,7},
-        {1,1}
-    },
-    C = {
-        {5,1},
-        {9,9}
-    },
-    G = {
-        {4,3}
-    },
-    R = {
-        {8,7},
-        {6,1},
-        {4,5}
-    }
+-- local N = 14 -- dimensione della tabella
+-- local D = {
+--     S = {
+--         {2,4,0,0,0,0},
+--         {3,8,0,0,0,0},
+--         {4,1,0,0,0,0},
+--         {9,6,0,0,0,0}
+--     },
+--     U = {
+--         {7,7},
+--         {1,1}
+--     },
+--     C = {
+--         {5,1},
+--         {9,9}
+--     },
+--     G = {
+--         {4,3}
+--     },
+--     R = {
+--         {8,7},
+--         {6,1},
+--         {4,5}
+--     }
+-- }
+
+-- local D = {
+--     S = {
+--         {5,7,0,0,0,0},
+--         {3,8,0,0,0,0},
+--         {4,11,0,0,0,0},
+--         {9,6,0,0,0,0},
+--         {14,14,0,0,0,0},
+--         {1,13,0,0,0,0},
+--         {12,2,0,0,0,0},
+--     },
+--     U = {
+--         {7,7},
+--         {1,1},
+--         {8,2}
+--     },
+--     C = {
+--         {5,1},
+--         {9,9},
+--         {10,3}
+--     },
+--     G = {
+--         {4,3},
+--         {8,11}
+--     },
+--     R = {
+--         {8,7},
+--         {6,1},
+--         {4,5},
+--         {13,13}
+--     }
+-- }
+
+N = 10
+D = {
+    S = {{8, 8, 0, 0, 0, 0}},
+    U = {},
+    C = {{4, 8}},
+    G = {{9, 7}, {5, 7}},
+    R = {{6, 4}, {9, 8}}
 }
+
+
+
+-- function to check if the table is correct, if the coordinates are in the table and if the coordinates are not repeated
+-- @param: table (the whole table D)
+-- @param: N (the dimension of the table)
+-- @return: true if the table is correct, false otherwise
+local function checkTable(tabella, N)
+    for key_table, inner_table in pairs(tabella) do
+        -- checks if the coordinates are in the table
+        for index, item in ipairs(inner_table) do
+            if (key_table == 'S') then
+                if (#item ~= 6) then return false end
+            else
+                if (#item ~= 2) then return false end
+            end
+            if (item[1] > N or item[2] > N or item[1] < 1 or item[2] < 1) then return false
+            else
+                -- checks if the coordinates are repeated in the same table
+                for index2, item2 in ipairs(inner_table) do
+                    if (index ~= index2 and item[1] == item2[1] and item[2] == item2[2]) then return false end
+                end
+                -- checks if the coordinates are repeated in the other tables
+                for key_table_2, other_table in pairs(tabella) do
+                    if (key_table ~= key_table_2) then
+                        for _, item2 in ipairs(other_table) do
+                            if (item[1] == item2[1] and item[2] == item2[2]) then return false end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return true
+end
 
 -- function to print the table (the whole table with sempai and attributes)
 local function printTable(tabella)
@@ -57,7 +131,6 @@ local function printTable(tabella)
         print(table.unpack(value))
     end
 end
-printTable(D)
 
 -- function to deep copy the whole table (not only the first level) and it can be either S or D
 -- @param: table (the whole table D or S)
@@ -132,18 +205,40 @@ local function move(tabella_D, num_sempai)
                 return math.abs(sempai_x - obj_x) + math.abs(sempai_y - obj_y)
             end
             local min_dist = 1000000 -- una tantum
-            local min_x = 0
-            local min_y = 0
-            for key, prop_table in pairs(tabella) do
-                if (key ~= "S") then
-                    for _, object in ipairs(prop_table) do
-                        local dist_from_current_object = diff_dist(sempai_x, sempai_y, object[1], object[2])
-                        if (dist_from_current_object < min_dist) then
-                            min_dist = dist_from_current_object
-                            min_x = object[1]
-                            min_y = object[2]
-                        end
-                    end
+            local min_x = 1
+            local min_y = 1
+
+            -- This for are needed because the function "pairs" doesn't have an order with which the tables are iterated
+            for _, object in ipairs(tabella.U) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, object[1], object[2])
+                if (dist_from_current_object < min_dist) then
+                    min_dist = dist_from_current_object
+                    min_x = object[1]
+                    min_y = object[2]
+                end
+            end
+            for _, object in ipairs(tabella.C) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, object[1], object[2])
+                if (dist_from_current_object < min_dist) then
+                    min_dist = dist_from_current_object
+                    min_x = object[1]
+                    min_y = object[2]
+                end
+            end
+            for _, object in ipairs(tabella.G) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, object[1], object[2])
+                if (dist_from_current_object < min_dist) then
+                    min_dist = dist_from_current_object
+                    min_x = object[1]
+                    min_y = object[2]
+                end
+            end
+            for _, object in ipairs(tabella.R) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, object[1], object[2])
+                if (dist_from_current_object < min_dist) then
+                    min_dist = dist_from_current_object
+                    min_x = object[1]
+                    min_y = object[2]
                 end
             end
             return min_x, min_y
@@ -253,28 +348,58 @@ local function move(tabella_D, num_sempai)
             end
 
             local min_dist = 1000000 -- una tantum
-            local min_x = 0 -- x coordinate of the closest item
-            local min_y = 0 -- y coordinate of the closest item
-            for key, sub_table in pairs(tabella) do
-                for _, item in ipairs(sub_table) do
-                    local dist_from_current_object = diff_dist(sempai_x, sempai_y, item[1], item[2])
-                    -- checks (the 'and' has a specific order because it's lazy):
-                    -- 1) if the distance is more than 0 (so it's not the same object/sempai)
-                    -- 2) if the distance is less than the current minimum distance
-                    -- 3) if the current item is a sempai and if the moving sempai can win against the current sempai
-                    if ((dist_from_current_object > 0) and (dist_from_current_object < min_dist)) then
-                        if ((key ~= "S") or (key == 'S' and check_win(tabella, getSempaiFromCoordinates(tabella, sempai_x, sempai_y), getSempaiFromCoordinates(tabella, item[1], item[2])))) then
-                            min_dist = dist_from_current_object
-                            min_x = item[1]
-                            min_y = item[2]
-                        end
-                    end
+            local min_x = 1 -- x coordinate of the closest item
+            local min_y = 1 -- y coordinate of the closest item
+            
+            -- checks (the 'and' has a specific order because it's lazy):
+            -- 1) if the distance is more than 0 (so it's not the same object/sempai)
+            -- 2) if the distance is less than the current minimum distance
+            -- 3) if the moving sempai can win against the current sempai iterated
+            for _, item in ipairs(tabella.S) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, item[1], item[2])
+                if ((dist_from_current_object > 0) and (dist_from_current_object < min_dist) and check_win(tabella, getSempaiFromCoordinates(tabella, sempai_x, sempai_y), getSempaiFromCoordinates(tabella, item[1], item[2]))) then
+                    min_dist = dist_from_current_object
+                    min_x = item[1]
+                    min_y = item[2]
+                end
+            end
+            for _, item in ipairs(tabella.U) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, item[1], item[2])
+                if (dist_from_current_object < min_dist) then
+                    min_dist = dist_from_current_object
+                    min_x = item[1]
+                    min_y = item[2]
+                end
+            end
+            for _, item in ipairs(tabella.C) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, item[1], item[2])
+                if (dist_from_current_object < min_dist) then
+                    min_dist = dist_from_current_object
+                    min_x = item[1]
+                    min_y = item[2]
+                end
+            end
+            for _, item in ipairs(tabella.G) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, item[1], item[2])
+                if (dist_from_current_object < min_dist) then
+                    min_dist = dist_from_current_object
+                    min_x = item[1]
+                    min_y = item[2]
+                end
+            end
+            for _, item in ipairs(tabella.R) do
+                local dist_from_current_object = diff_dist(sempai_x, sempai_y, item[1], item[2])
+                if (dist_from_current_object < min_dist) then
+                    min_dist = dist_from_current_object
+                    min_x = item[1]
+                    min_y = item[2]
                 end
             end
             return min_x, min_y
         end
 
         -- auxiliar function to move the sempai to the closest object or the closest sempai, calculated from the getCoordinatesOfClosestItem function
+        -- (If the distance is 0, then the sempai is already on the object/sempai and it doesn't move)
         -- @param: tabella (the whole table D)
         -- @param: sempai_x (the x coordinate of the sempai)
         -- @param: sempai_y (the y coordinate of the sempai)
@@ -401,6 +526,7 @@ local function move(tabella_D, num_sempai)
     -- correct the index of the sempai if it changed after a fight
     local new_num_sempai = getSempaiFromCoordinates(temp_table, sempai_x, sempai_y)
 
+    -- checks if the sempai has lost and has been eliminated from the table
     if (new_num_sempai == 0) then
         return temp_table
     end
@@ -416,16 +542,22 @@ end
 -- OUTPUT
 
 print("\n")
--- printTable(move(move(D, 4), 4))
 
--- temp_table = move(move(D, 4), 4)
--- print("\n")
--- print(table.unpack(temp_table.S[4]))
 
-local function output (temp_table)
-    
-    for i = 1, 6, 1 do
-        for index, value in pairs(temp_table.S) do
+if checkTable(D, N) then
+    print("\n")
+    print("The table is correct")
+else
+    print("\n")
+    print("The table is not correct")
+end
+
+printTable(D)
+
+local function output(temp_table)
+
+    for i = 1, 10, 1 do
+        for index, _ in pairs(temp_table.S) do
             if (index <= #temp_table.S) then
                 temp_table = move(temp_table, index)
             end
@@ -443,7 +575,7 @@ local function output (temp_table)
     end
 end
 
-output(deepcopy(D))
+-- output(deepcopy(D))
 
 local function start(tabella_D)
     if #tabella_D.S == 1 and #tabella_D.U == 0 and #tabella_D.C == 0 and #tabella_D.G == 0 and #tabella_D.R == 0 then
@@ -468,4 +600,4 @@ local function start(tabella_D)
     end
 end
 
--- start(deepcopy(D))
+start(deepcopy(D))
